@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { PROPERTIES } from '../data/properties';
 import AvailabilityCalendar from '../components/AvailabilityCalendar';
-import { Calendar, MessageSquare, ArrowLeft, ShieldCheck, Loader2, Info } from 'lucide-react';
+import { Calendar, MessageSquare, ArrowLeft, ShieldCheck, Loader2, User, Phone } from 'lucide-react';
 
 const Booking = () => {
   const [searchParams] = useSearchParams();
@@ -11,16 +11,15 @@ const Booking = () => {
 
   // Form State
   const propertyId = searchParams.get('property') || 'holiday_home';
-  const initialCheckIn = searchParams.get('check_in') || '';
-  
-  const [checkIn, setCheckIn] = useState(initialCheckIn);
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [error, setError] = useState(null);
 
   // Selected Property Object Helper
   const property = PROPERTIES.find(p => p.id === propertyId) || PROPERTIES[0];
 
-  // Logic: When a user clicks a date on the calendar
   const handleDateSelection = (dateStr) => {
     setError(null);
     if (!checkIn || (checkIn && checkOut)) {
@@ -36,18 +35,24 @@ const Booking = () => {
     }
   };
 
-  const handleWhatsAppConfirm = async () => {
+  const handleWhatsAppConfirm = async (e) => {
+    e.preventDefault();
+    
+    if (!clientName.trim() || !clientPhone.trim()) {
+      setError("Please enter your name and phone number.");
+      return;
+    }
+
     if (!checkIn || !checkOut) {
-      setError("Please select both a Start and End date.");
+      setError("Please select both a Start and End date on the calendar.");
       return;
     }
 
     setIsSubmitting(true);
     setError(null);
     
-    // 1. Call Backend to "Slash" the range in the database
     try {
-      const res = await fetch('https://tamayi.zimbabwe.workers.dev/api/bookings', {
+      await fetch('https://tamayi.zimbabwe.workers.dev/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -55,23 +60,22 @@ const Booking = () => {
           property_name: property.name,
           check_in: checkIn,
           check_out: checkOut,
-          client_name: 'Website Guest',
-          client_phone: 'WhatsApp User'
+          client_name: clientName,
+          client_phone: clientPhone
         })
       });
-      if (!res.ok) throw new Error("Failed to update database.");
     } catch (err) {
-      console.error('Auto-slash failed, but proceeding to WhatsApp:', err);
+      console.error('Auto-slash failed:', err);
     }
 
-    // 2. Open WhatsApp with the full range
-    const phoneNumber = '263771234567'; // Your WhatsApp Number
-    const textMsg = `Hello Tamayi Hospitality Group! I'm interested in booking:
+    const phoneNumber = '263771234567';
+    const textMsg = `Hello Tamayi! My name is ${clientName}.
   
-*Property:* ${property.name}
-*Dates:* ${checkIn} to ${checkOut}
+I'm interested in booking: *${property.name}*
+Dates: *${checkIn}* to *${checkOut}*
+My Phone: ${clientPhone}
 
-Please let me know the next steps for confirmation. Thank you!`;
+Please confirm availability. Thank you!`;
 
     const encoded = encodeURIComponent(textMsg);
     window.open(`https://wa.me/${phoneNumber}?text=${encoded}`, '_blank');
@@ -80,90 +84,128 @@ Please let me know the next steps for confirmation. Thank you!`;
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] pt-28 pb-16 px-6">
-      <div className="max-w-5xl mx-auto flex flex-col lg:flex-row gap-12">
-        
-        {/* Left: Property Specific Calendar */}
-        <div className="lg:w-3/5 space-y-6">
-          <Link to="/" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#1A1A1A]/60 hover:text-[#C9A96E] transition-colors font-semibold">
-            <ArrowLeft size={14} /> Back to explore
-          </Link>
-          
-          <div className="bg-white border border-[#E8E3DC] p-2 shadow-sm">
-            <div className="p-6 border-b border-[#E8E3DC]">
-              <h2 className="font-serif text-2xl text-[#1A1A1A]">Select Your Dates</h2>
-              <p className="text-xs text-[#1A1A1A]/50 uppercase tracking-widest mt-1">Calendar for: {property.name}</p>
-            </div>
-            
-            <AvailabilityCalendar 
-              initialPropertyId={property.id} 
-              onDateClick={handleDateSelection} 
-              showTabs={false} 
-            />
-            
-            <div className="p-4 bg-[#FAF8F5] flex gap-3 items-start border-t border-[#E8E3DC]">
-              <Info size={16} className="text-[#C9A96E] shrink-0 mt-0.5" />
-              <p className="text-[11px] text-[#1A1A1A]/60 leading-relaxed font-sans">
-                <strong>How to select:</strong> Click the calendar once for your <span className="text-[#1A1A1A] font-bold">Start Date</span> and then click again for your <span className="text-[#1A1A1A] font-bold">End Date</span>.
-              </p>
-            </div>
+    <div className="min-h-screen bg-[#FAF8F5] pt-28 pb-20 px-6">
+      <div className="max-w-2xl mx-auto">
+        <Link to="/" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#1A1A1A]/60 hover:text-[#C9A96E] transition-colors mb-8 font-semibold">
+          <ArrowLeft size={14} /> Back to explore
+        </Link>
+
+        <div className="bg-white border border-[#E8E3DC] shadow-xl overflow-hidden animate-slide-up">
+          {/* Header */}
+          <div className="bg-[#1A1A1A] p-8 text-center border-b border-[#C9A96E]/20">
+            <span className="text-[#C9A96E] text-[10px] uppercase tracking-[0.3em] font-bold block mb-2">Reservation Inquiry</span>
+            <h2 className="text-2xl font-serif text-white uppercase tracking-wider">Book Your Stay</h2>
           </div>
-        </div>
 
-        {/* Right: Stay Summary & Confirm */}
-        <div className="lg:w-2/5">
-          <div className="bg-white border border-[#E8E3DC] p-8 md:p-10 shadow-lg sticky top-32">
-            <span className="text-[#C9A96E] text-xs uppercase tracking-widest font-bold block mb-2">Booking Summary</span>
-            <h3 className="text-2xl font-serif text-[#1A1A1A] mb-6">{property.name}</h3>
+          <form onSubmit={handleWhatsAppConfirm} className="p-8 md:p-12 space-y-8">
+            
+            {/* Step 1: Guest Info */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 border-b border-[#E8E3DC] pb-2">
+                <span className="w-6 h-6 rounded-full bg-[#C9A96E] text-[#1A1A1A] flex items-center justify-center text-[10px] font-bold">1</span>
+                <h3 className="font-serif text-lg text-[#1A1A1A]">Contact Details</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-bold text-[#1A1A1A]/50 tracking-widest ml-1">Full Name</label>
+                  <div className="relative">
+                    <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#C9A96E]" />
+                    <input 
+                      type="text" 
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      className="w-full pl-10 pr-4 py-3 bg-[#FAF8F5] border border-[#E8E3DC] focus:border-[#C9A96E] outline-none text-sm font-sans transition-all"
+                      required
+                    />
+                  </div>
+                </div>
 
-            <div className="aspect-video overflow-hidden mb-8 border border-[#E8E3DC]">
-              <img src={property.image} alt={property.name} className="w-full h-full object-cover" />
-            </div>
-
-            <div className="space-y-4 mb-8">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] uppercase font-bold text-[#1A1A1A]/40 tracking-widest">Check-In</label>
-                <div className="p-3 bg-[#FAF8F5] border border-[#E8E3DC] text-sm font-semibold text-[#1A1A1A] flex items-center gap-2">
-                  <Calendar size={14} className="text-[#C9A96E]" />
-                  {checkIn || 'Click calendar...'}
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-bold text-[#1A1A1A]/50 tracking-widest ml-1">Phone Number</label>
+                  <div className="relative">
+                    <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#C9A96E]" />
+                    <input 
+                      type="tel" 
+                      value={clientPhone}
+                      onChange={(e) => setClientPhone(e.target.value)}
+                      placeholder="+263 77..."
+                      className="w-full pl-10 pr-4 py-3 bg-[#FAF8F5] border border-[#E8E3DC] focus:border-[#C9A96E] outline-none text-sm font-sans transition-all"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] uppercase font-bold text-[#1A1A1A]/40 tracking-widest">Check-Out</label>
-                <div className="p-3 bg-[#FAF8F5] border border-[#E8E3DC] text-sm font-semibold text-[#1A1A1A] flex items-center gap-2">
-                  <Calendar size={14} className="text-[#C9A96E]" />
-                  {checkOut || 'Click calendar...'}
+            {/* Step 2: Selected Room (Autofilled) */}
+            <div className="space-y-4">
+               <div className="flex items-center gap-3 border-b border-[#E8E3DC] pb-2">
+                <span className="w-6 h-6 rounded-full bg-[#C9A96E] text-[#1A1A1A] flex items-center justify-center text-[10px] font-bold">2</span>
+                <h3 className="font-serif text-lg text-[#1A1A1A]">Property Selection</h3>
+              </div>
+              <div className="p-4 bg-[#FAF8F5] border border-[#E8E3DC] flex items-center gap-4">
+                <img src={property.image} alt="" className="w-16 h-16 object-cover border border-[#E8E3DC]" />
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-[#C9A96E] tracking-widest">Selected Accommodation</p>
+                  <p className="font-serif text-base text-[#1A1A1A]">{property.name}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3: Small Calendar */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 border-b border-[#E8E3DC] pb-2">
+                <span className="w-6 h-6 rounded-full bg-[#C9A96E] text-[#1A1A1A] flex items-center justify-center text-[10px] font-bold">3</span>
+                <h3 className="font-serif text-lg text-[#1A1A1A]">Stay Dates</h3>
+              </div>
+              
+              <div className="max-w-md mx-auto transform scale-90 md:scale-100 origin-top">
+                <AvailabilityCalendar 
+                  initialPropertyId={property.id} 
+                  onDateClick={handleDateSelection} 
+                  showTabs={false} 
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-[#FAF8F5] border border-[#E8E3DC] text-center">
+                  <p className="text-[9px] uppercase font-bold text-[#1A1A1A]/40 mb-1">Check-In</p>
+                  <p className="text-xs font-semibold text-[#1A1A1A]">{checkIn || '-- -- ----'}</p>
+                </div>
+                <div className="p-3 bg-[#FAF8F5] border border-[#E8E3DC] text-center">
+                  <p className="text-[9px] uppercase font-bold text-[#1A1A1A]/40 mb-1">Check-Out</p>
+                  <p className="text-xs font-semibold text-[#1A1A1A]">{checkOut || '-- -- ----'}</p>
                 </div>
               </div>
             </div>
 
             {error && (
-              <div className="mb-6 p-3 bg-red-50 border border-red-100 text-red-600 text-[11px] font-semibold text-center">
+              <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-xs font-semibold text-center">
                 {error}
               </div>
             )}
 
             <button
-              onClick={handleWhatsAppConfirm}
+              type="submit"
               disabled={isSubmitting}
-              className="w-full py-4 bg-[#1A1A1A] hover:bg-[#C9A96E] text-white hover:text-[#1A1A1A] text-xs font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-3 shadow-md disabled:opacity-70"
+              className="w-full py-5 bg-[#1A1A1A] hover:bg-[#C9A96E] text-white hover:text-[#1A1A1A] text-xs font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-3 shadow-lg disabled:opacity-70"
             >
               {isSubmitting ? (
-                <Loader2 size={18} className="animate-spin" />
+                <Loader2 size={20} className="animate-spin" />
               ) : (
-                <MessageSquare size={18} />
+                <MessageSquare size={20} />
               )}
-              {isSubmitting ? 'Processing...' : 'Confirm via WhatsApp'}
+              {isSubmitting ? 'Sending Request...' : 'Confirm Inquiry via WhatsApp'}
             </button>
 
-            <div className="mt-8 pt-6 border-t border-[#E8E3DC] flex gap-3 items-center justify-center text-[10px] text-[#1A1A1A]/40 uppercase tracking-widest font-semibold">
+            <div className="flex items-center justify-center gap-2 text-[10px] text-[#1A1A1A]/40 uppercase tracking-widest font-semibold pt-4">
               <ShieldCheck size={14} className="text-[#C9A96E]" />
-              Direct Inquiry logic active
+              Secure Direct Booking System
             </div>
-          </div>
+          </form>
         </div>
-
       </div>
     </div>
   );
