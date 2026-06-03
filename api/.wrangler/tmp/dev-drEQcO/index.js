@@ -2338,26 +2338,34 @@ app.post("/api/bookings", async (c) => {
     num_guests,
     special_requests
   } = await c.req.json();
-  if (!property_id || !property_name || !client_name || !client_phone || !check_in) {
+  if (!property_id || !property_name || !check_in) {
     return c.json({ error: "Missing required booking fields" }, 400);
   }
   const bookingId = "B-" + Math.random().toString(36).substr(2, 9).toUpperCase();
-  const query = `
+  const insertBooking = c.env.DB.prepare(`
     INSERT INTO bookings (id, property_id, property_name, client_name, client_phone, check_in, check_out, num_guests, special_requests, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
-  `;
-  await c.env.DB.prepare(query).bind(
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
+  `).bind(
     bookingId,
     property_id,
     property_name,
-    client_name,
-    client_phone,
+    client_name || "Guest",
+    client_phone || "WhatsApp",
     check_in,
     check_out || null,
     parseInt(num_guests) || 1,
     special_requests || ""
-  ).run();
-  return c.json({ booking_id: bookingId });
+  );
+  const availabilityId = crypto.randomUUID();
+  const upsertAvailability = c.env.DB.prepare(`
+    INSERT INTO availability (id, property_id, date, status, note, created_at, updated_at)
+    VALUES (?, ?, ?, 'fully_booked', 'Auto-booked via website', datetime('now'), datetime('now'))
+    ON CONFLICT(property_id, date) DO UPDATE SET
+      status = 'fully_booked',
+      updated_at = datetime('now')
+  `).bind(availabilityId, property_id, check_in);
+  await c.env.DB.batch([insertBooking, upsertAvailability]);
+  return c.json({ booking_id: bookingId, success: true });
 });
 app.put("/api/bookings/:id", authMiddleware, async (c) => {
   const id = c.req.param("id");
