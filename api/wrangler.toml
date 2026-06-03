@@ -1,0 +1,11 @@
+name = "tamayi"
+main = "src/index.js"
+compatibility_date = "2026-06-03"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tamayi-db"
+database_id = "25473843-1732-48eb-bc9c-85e317e5452b"
+
+[vars]
+ADMIN_PASSWORD = "TamayiLuxury2026"

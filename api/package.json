@@ -1,0 +1,16 @@
+{
+  "name": "tamayi-api",
+  "version": "1.0.0",
+  "description": "Tamayi Hospitality Group Backend Worker",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.107.2"
+  }
+}
