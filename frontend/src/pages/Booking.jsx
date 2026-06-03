@@ -9,6 +9,11 @@ const Booking = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Scroll to top on entry
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Form State
   const propertyId = searchParams.get('property') || 'holiday_home';
   const [clientName, setClientName] = useState('');
