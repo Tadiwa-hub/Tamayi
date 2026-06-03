@@ -10,7 +10,7 @@ const PROPERTIES = [
   { id: 'outdoor_setup', label: 'Outdoor Setup' }
 ];
 
-const AvailabilityCalendar = ({ initialPropertyId = 'holiday_home' }) => {
+const AvailabilityCalendar = ({ initialPropertyId = 'holiday_home', onDateClick, showTabs = true }) => {
   const navigate = useNavigate();
   const [selectedProperty, setSelectedProperty] = useState(initialPropertyId);
   
@@ -22,6 +22,13 @@ const AvailabilityCalendar = ({ initialPropertyId = 'holiday_home' }) => {
   const [onRequestNotice, setOnRequestNotice] = useState(null);
   
   const timerRef = useRef(null);
+
+  // Keep selectedProperty in sync with initialPropertyId if tabs are hidden
+  useEffect(() => {
+    if (!showTabs) {
+      setSelectedProperty(initialPropertyId);
+    }
+  }, [initialPropertyId, showTabs]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); // 0-11
@@ -109,6 +116,11 @@ const AvailabilityCalendar = ({ initialPropertyId = 'holiday_home' }) => {
 
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
+    if (onDateClick) {
+      onDateClick(dateStr, dayInfo);
+      return;
+    }
+
     if (dayInfo.status === 'on_request') {
       setOnRequestNotice({
         date: dateStr,
@@ -123,7 +135,11 @@ const AvailabilityCalendar = ({ initialPropertyId = 'holiday_home' }) => {
 
   const handleConfirmOnRequest = () => {
     if (onRequestNotice) {
-      navigate(`/book?property=${selectedProperty}&check_in=${onRequestNotice.date}`);
+      if (onDateClick) {
+        onDateClick(onRequestNotice.date, { status: 'on_request' });
+      } else {
+        navigate(`/book?property=${selectedProperty}&check_in=${onRequestNotice.date}`);
+      }
     }
   };
 
@@ -148,24 +164,26 @@ const AvailabilityCalendar = ({ initialPropertyId = 'holiday_home' }) => {
   return (
     <div className="w-full bg-[#FAF8F5] border border-[#E8E3DC] p-6 md:p-8">
       {/* Property Selector Tabs */}
-      <div className="flex flex-wrap gap-2 mb-8 border-b border-[#E8E3DC] pb-4 justify-center md:justify-start">
-        {PROPERTIES.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => {
-              setSelectedProperty(p.id);
-              setOnRequestNotice(null);
-            }}
-            className={`px-4 py-2 text-xs uppercase tracking-widest font-semibold transition-all duration-300 rounded-none border ${
-              selectedProperty === p.id
-                ? 'bg-[#1A1A1A] border-[#1A1A1A] text-white'
-                : 'bg-white border-[#E8E3DC] text-[#1A1A1A]/70 hover:border-[#1A1A1A]'
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+      {showTabs && (
+        <div className="flex flex-wrap gap-2 mb-8 border-b border-[#E8E3DC] pb-4 justify-center md:justify-start">
+          {PROPERTIES.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => {
+                setSelectedProperty(p.id);
+                setOnRequestNotice(null);
+              }}
+              className={`px-4 py-2 text-xs uppercase tracking-widest font-semibold transition-all duration-300 rounded-none border ${
+                selectedProperty === p.id
+                  ? 'bg-[#1A1A1A] border-[#1A1A1A] text-white'
+                  : 'bg-white border-[#E8E3DC] text-[#1A1A1A]/70 hover:border-[#1A1A1A]'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Calendar Header */}
       <div className="flex items-center justify-between mb-6">
@@ -260,7 +278,7 @@ const AvailabilityCalendar = ({ initialPropertyId = 'holiday_home' }) => {
             onClick={handleConfirmOnRequest}
             className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-xs uppercase tracking-wider font-semibold transition-colors shrink-0 cursor-pointer"
           >
-            Continue Booking
+            Confirm Date
           </button>
         </div>
       )}

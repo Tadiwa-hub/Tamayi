@@ -209,7 +209,7 @@ app.get('/api/bookings', authMiddleware, async (c) => {
   return c.json(results || []);
 });
 
-// Public: Create new booking request & Auto-Slash the date
+// Public: Create new booking request & Auto-Slash the range
 // POST /api/bookings
 app.post('/api/bookings', async (c) => {
   const { 
@@ -223,13 +223,13 @@ app.post('/api/bookings', async (c) => {
     special_requests 
   } = await c.req.json();
 
-  if (!property_id || !property_name || !check_in) {
-    return c.json({ error: 'Missing required booking fields' }, 400);
+  if (!property_id || !property_name || !check_in || !check_out) {
+    return c.json({ error: 'Missing required booking fields: property_id, property_name, check_in, check_out' }, 400);
   }
 
   const bookingId = 'B-' + Math.random().toString(36).substr(2, 9).toUpperCase();
   
-  // Statement 1: Insert Booking Record
+  // 1. Insert Booking Record
   const insertBooking = c.env.DB.prepare(`
     INSERT INTO bookings (id, property_id, property_name, client_name, client_phone, check_in, check_out, num_guests, special_requests, status)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
@@ -240,25 +240,39 @@ app.post('/api/bookings', async (c) => {
     client_name || 'Guest',
     client_phone || 'WhatsApp',
     check_in,
-    check_out || null,
+    check_out,
     parseInt(num_guests) || 1,
     special_requests || ''
   );
 
-  // Statement 2: Auto-Slash the date in Availability table
-  const availabilityId = crypto.randomUUID();
-  const upsertAvailability = c.env.DB.prepare(`
-    INSERT INTO availability (id, property_id, date, status, note, created_at, updated_at)
-    VALUES (?, ?, ?, 'fully_booked', 'Auto-booked via website', datetime('now'), datetime('now'))
-    ON CONFLICT(property_id, date) DO UPDATE SET
-      status = 'fully_booked',
-      updated_at = datetime('now')
-  `).bind(availabilityId, property_id, check_in);
+  // 2. Generate statements for each date in the range to "Slash" them
+  const statements = [insertBooking];
+  const start = new Date(check_in);
+  const end = new Date(check_out);
+  
+  // Cap at 30 days for safety
+  let curr = new Date(start);
+  let count = 0;
+  while (curr <= end && count < 31) {
+    const dateStr = curr.toISOString().split('T')[0];
+    const uuid = crypto.randomUUID();
+    statements.push(
+      c.env.DB.prepare(`
+        INSERT INTO availability (id, property_id, date, status, note, created_at, updated_at)
+        VALUES (?, ?, ?, 'fully_booked', 'Auto-booked range', datetime('now'), datetime('now'))
+        ON CONFLICT(property_id, date) DO UPDATE SET
+          status = 'fully_booked',
+          updated_at = datetime('now')
+      `).bind(uuid, property_id, dateStr)
+    );
+    curr.setDate(curr.getDate() + 1);
+    count++;
+  }
 
-  // Execute both in a batch
-  await c.env.DB.batch([insertBooking, upsertAvailability]);
+  // Execute batch
+  await c.env.DB.batch(statements);
 
-  return c.json({ booking_id: bookingId, success: true });
+  return c.json({ booking_id: bookingId, success: true, slashed_count: statements.length - 1 });
 });
 
 // Admin Only: Update booking status

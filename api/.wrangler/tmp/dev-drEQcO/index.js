@@ -2338,8 +2338,8 @@ app.post("/api/bookings", async (c) => {
     num_guests,
     special_requests
   } = await c.req.json();
-  if (!property_id || !property_name || !check_in) {
-    return c.json({ error: "Missing required booking fields" }, 400);
+  if (!property_id || !property_name || !check_in || !check_out) {
+    return c.json({ error: "Missing required booking fields: property_id, property_name, check_in, check_out" }, 400);
   }
   const bookingId = "B-" + Math.random().toString(36).substr(2, 9).toUpperCase();
   const insertBooking = c.env.DB.prepare(`
@@ -2352,20 +2352,32 @@ app.post("/api/bookings", async (c) => {
     client_name || "Guest",
     client_phone || "WhatsApp",
     check_in,
-    check_out || null,
+    check_out,
     parseInt(num_guests) || 1,
     special_requests || ""
   );
-  const availabilityId = crypto.randomUUID();
-  const upsertAvailability = c.env.DB.prepare(`
-    INSERT INTO availability (id, property_id, date, status, note, created_at, updated_at)
-    VALUES (?, ?, ?, 'fully_booked', 'Auto-booked via website', datetime('now'), datetime('now'))
-    ON CONFLICT(property_id, date) DO UPDATE SET
-      status = 'fully_booked',
-      updated_at = datetime('now')
-  `).bind(availabilityId, property_id, check_in);
-  await c.env.DB.batch([insertBooking, upsertAvailability]);
-  return c.json({ booking_id: bookingId, success: true });
+  const statements = [insertBooking];
+  const start = new Date(check_in);
+  const end = new Date(check_out);
+  let curr = new Date(start);
+  let count = 0;
+  while (curr <= end && count < 31) {
+    const dateStr = curr.toISOString().split("T")[0];
+    const uuid = crypto.randomUUID();
+    statements.push(
+      c.env.DB.prepare(`
+        INSERT INTO availability (id, property_id, date, status, note, created_at, updated_at)
+        VALUES (?, ?, ?, 'fully_booked', 'Auto-booked range', datetime('now'), datetime('now'))
+        ON CONFLICT(property_id, date) DO UPDATE SET
+          status = 'fully_booked',
+          updated_at = datetime('now')
+      `).bind(uuid, property_id, dateStr)
+    );
+    curr.setDate(curr.getDate() + 1);
+    count++;
+  }
+  await c.env.DB.batch(statements);
+  return c.json({ booking_id: bookingId, success: true, slashed_count: statements.length - 1 });
 });
 app.put("/api/bookings/:id", authMiddleware, async (c) => {
   const id = c.req.param("id");
