@@ -46,7 +46,7 @@ INSERT OR IGNORE INTO availability (id, property_id, date, status, note) VALUES
 
 -- Seed Initial Bookings (Mock Data)
 INSERT OR IGNORE INTO bookings (id, property_id, property_name, client_name, client_phone, check_in, check_out, num_guests, special_requests, status, created_at) VALUES
-  ('b1', 'holiday_home', 'Tamayi Holiday Home', 'John Doe', '+263771234567', '2026-06-10', '2026-06-12', 6, 'Late check-in requested.', 'confirmed', '2026-06-01 10:00:00'),
+  ('b1', 'holiday_home', 'Tamayi Holiday Home', 'John Doe', '+263787891150', '2026-06-10', '2026-06-12', 6, 'Late check-in requested.', 'confirmed', '2026-06-01 10:00:00'),
   ('b2', 'full_house', 'Full House', 'Sarah Jenkins', '+27829876543', '2026-06-15', '2026-06-17', 5, 'Require infant high chair and extra towels.', 'pending', '2026-06-02 14:30:00'),
   ('b3', 'new_cottage', 'New Cottage', 'Michael Ndlovu', '+263784556677', '2026-06-20', '2026-06-22', 2, 'Honeymoon couple, setup rose petals.', 'confirmed', '2026-06-02 16:15:00'),
   ('b4', 'outdoor_setup', 'Outdoor Setup', 'Chipo Moyo', '+263712334455', '2026-06-28', '2026-06-28', 15, 'Baby shower setup, theme gold and pastel pink.', 'pending', '2026-06-03 08:00:00');

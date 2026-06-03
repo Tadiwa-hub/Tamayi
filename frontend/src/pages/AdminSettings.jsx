@@ -102,7 +102,7 @@ const AdminSettings = () => {
                   The current integration utilizes standard WhatsApp click-to-chat links pre-loaded with query tokens. Direct contact target is:
                 </p>
                 <div className="bg-[#222222] border border-white/5 p-3 font-mono text-[#C9A96E] text-center text-sm font-bold">
-                  +263 77 123 4567
+                  +263 78 789 1150
                 </div>
               </div>
             </section>

@@ -8,7 +8,7 @@ const Footer = () => {
 
   // Helper to open WhatsApp with general inquiry text
   const handleGeneralWhatsApp = () => {
-    const defaultPhone = '+263771234567'; // Default WhatsApp Contact
+    const defaultPhone = '+263787891150'; // Default WhatsApp Contact
     const message = encodeURIComponent("Hello Tamayi Hospitality Group! I would like to make an inquiry regarding your luxury accommodations.");
     window.open(`https://wa.me/${defaultPhone.replace('+', '')}?text=${message}`, '_blank');
   };
@@ -98,7 +98,7 @@ const Footer = () => {
             </div>
             <div className="flex items-center gap-2.5">
               <Phone size={16} className="text-[#C9A96E] shrink-0" />
-              <span>+263 77 123 4567</span>
+              <span>+263 78 789 1150</span>
             </div>
             <div className="flex items-center gap-2.5">
               <Mail size={16} className="text-[#C9A96E] shrink-0" />

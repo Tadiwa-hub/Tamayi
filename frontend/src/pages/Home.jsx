@@ -150,7 +150,7 @@ const Home = () => {
                 </div>
                 <div>
                   <h4 className="text-xs uppercase tracking-widest text-[#C9A96E] font-semibold">Phone Contact</h4>
-                  <p className="text-sm text-white/70 mt-0.5">+263 77 123 4567</p>
+                  <p className="text-sm text-white/70 mt-0.5">+263 78 789 1150</p>
                 </div>
               </div>
 
@@ -182,7 +182,7 @@ const Home = () => {
               Have special configuration requests or want an instant quote? Connect directly with our reservation team on WhatsApp.
             </p>
             <a
-              href="https://wa.me/263771234567?text=Hello%20Tamayi%2C%20I'm%20interested%20in%20booking%20one%20of%20your%20properties."
+              href="https://wa.me/263787891150?text=Hello%20Tamayi%2C%20I'm%20interested%20in%20booking%20one%20of%20your%20properties."
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center gap-3 bg-[#C9A96E] hover:bg-[#B4955E] text-[#1A1A1A] py-3.5 px-6 font-semibold uppercase tracking-wider text-xs transition-colors w-full md:w-auto self-start cursor-pointer"

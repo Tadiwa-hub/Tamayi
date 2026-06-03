@@ -73,7 +73,7 @@ const Booking = () => {
       console.error('Auto-slash failed:', err);
     }
 
-    const phoneNumber = '263771234567';
+    const phoneNumber = '263787891150';
     const textMsg = `Hello Tamayi! My name is ${clientName}.
   
 I'm interested in booking: *${property.name}*

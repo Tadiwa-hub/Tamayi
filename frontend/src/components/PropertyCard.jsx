@@ -11,7 +11,7 @@ const PropertyCard = ({ property, index, todayStatus = 'available' }) => {
   };
 
   const handleWhatsAppClick = () => {
-    const phoneNumber = '263771234567';
+    const phoneNumber = '263787891150';
     const message = encodeURIComponent(`Hello! I'm interested in booking ${property.name}. Is it available?`);
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
   };
